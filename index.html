@@ -21,7 +21,7 @@
         let canvas = document.getElementById("gameCanvas");
         let ctx = canvas.getContext("2d");
         let pacman = { x: 50, y: 50, size: 20, dx: 0, dy: 0 };
-        let ghost = { x: 200, y: 200, size: 20, dx: 1, dy: 1, changeDirectionTimer: 0 };
+        let ghost = { x: 200, y: 200, size: 20, dx: 1, dy: 1 };
         let fruits = ["🍌", "🍐", "🍏", "🍓", "🍊"];
         let fruit = { x: Math.random() * 380 + 10, y: Math.random() * 380 + 10, size: 10, type: fruits[Math.floor(Math.random() * fruits.length)], active: true };
         let questions = [
@@ -36,6 +36,7 @@
             { q: "TWINT ist eine Schweizer Bezahl-App.", a: true },
             { q: "Ein Budget zu erstellen ist unnötig, solange man genug Geld auf dem Konto hat.", a: false }
         ];
+        let availableQuestions = [...questions];
         let currentQuestion = {};
         let correctAnswers = 0;
         let gamePaused = false;
@@ -67,17 +68,15 @@
 
         function moveGhost() {
             if (!gamePaused) {
+                let dx = pacman.x - ghost.x;
+                let dy = pacman.y - ghost.y;
+                let distance = Math.sqrt(dx * dx + dy * dy);
+                
+                ghost.dx = (dx / distance) * 1.5;
+                ghost.dy = (dy / distance) * 1.5;
+                
                 ghost.x += ghost.dx;
                 ghost.y += ghost.dy;
-                if (ghost.x > canvas.width || ghost.x < 0) ghost.dx *= -1;
-                if (ghost.y > canvas.height || ghost.y < 0) ghost.dy *= -1;
-                
-                ghost.changeDirectionTimer++;
-                if (ghost.changeDirectionTimer > 100) {
-                    ghost.dx = (Math.random() - 0.5) * 2;
-                    ghost.dy = (Math.random() - 0.5) * 2;
-                    ghost.changeDirectionTimer = 0;
-                }
             }
         }
 
@@ -101,7 +100,9 @@
 
         function askQuestion() {
             gamePaused = true;
-            currentQuestion = questions[Math.floor(Math.random() * questions.length)];
+            if (availableQuestions.length === 0) return;
+            let index = Math.floor(Math.random() * availableQuestions.length);
+            currentQuestion = availableQuestions.splice(index, 1)[0];
             document.getElementById("question").innerText = currentQuestion.q;
             document.getElementById("quiz-container").style.display = "block";
         }
