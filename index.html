@@ -1,383 +1,158 @@
 <!DOCTYPE html>
-<html lang="de">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Quiz Runner: Zusammenleben</title>
-  <style>
-    body {
-      margin: 0;
-      font-family: 'Comic Sans MS', cursive, sans-serif;
-      background-color: #f0f8ff;
-    }
-
-    #game-container {
-      max-width: 800px;
-      margin: 0 auto;
-      padding-top: 20px;
-      position: relative;
-    }
-
-    #game-area {
-      width: 100%;
-      height: 300px;
-      background-color: #dff;
-      border: 3px solid #333;
-      position: relative;
-      overflow: hidden;
-    }
-
-    #player {
-      width: 50px;
-      height: 70px;
-      background-color: transparent;
-      background-image: none;
-      background-color: #ff6347;
-      border-radius: 50%;
-      background-size: cover;
-      border-radius: 0;
-      border-radius: 0;
-      position: absolute;
-      bottom: 10px;
-      left: 50px;
-      transition: left 0.2s;
-    }
-
-    #obstacle {
-      width: 60px;
-      height: 60px;
-      background-color: #ffa500;
-      position: absolute;
-      bottom: 0;
-      left: 600px;
-    }
-
-    #question-box {
-      margin-top: 20px;
-      background-color: #fffbe0;
-      border: 2px dashed #333;
-      padding: 15px;
-      border-radius: 10px;
-    }
-
-    #question-box.hidden {
-      display: none;
-    }
-
-    #answers button {
-      margin: 5px;
-      padding: 10px;
-      background-color: #87cefa;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-
-    #answers button:hover {
-      background-color: #00bfff;
-    }
-
-    #score {
-      margin-top: 10px;
-      font-size: 18px;
-    }
-  </style>
+    <title>Pac-Man Quiz</title>
+    <style>
+        body { text-align: center; font-family: Arial, sans-serif; }
+        canvas { background: #333; display: block; margin: auto; }
+        .quiz-container { margin-top: 20px; display: none; }
+    </style>
 </head>
-<body onload="document.body.focus()" tabindex="0">
-  <div id="game-container">
-    <div id="game-area">
-      <div id="player"></div>
-      <div id="obstacle"></div>
+<body>
+    <h1>Pac-Man Quiz</h1>
+    <p>Steuere Pac-Man mit den Pfeiltasten, fange Früchte und beantworte Fragen!</p>
+    <canvas id="gameCanvas" width="400" height="400"></canvas>
+    <div class="quiz-container" id="quiz-container">
+        <p id="question"></p>
+        <button onclick="answer(true)">Richtig</button>
+        <button onclick="answer(false)">Falsch</button>
     </div>
-    <div id="question-box" class="hidden">
-      <p id="question-text"></p>
-      <div id="answers"></div>
-    </div>
-    <div id="score">Punkte: 0</div>
-  </div>
+    <script>
+        let canvas = document.getElementById("gameCanvas");
+        let ctx = canvas.getContext("2d");
+        let pacman = { x: 50, y: 50, size: 20, dx: 0, dy: 0 };
+        let ghost = { x: 200, y: 200, size: 20, dx: 1, dy: 1 };
+        let fruits = ["🍌", "🍐", "🍏", "🍓", "🍊"];
+        let fruit = { x: Math.random() * 380 + 10, y: Math.random() * 380 + 10, size: 10, type: fruits[Math.floor(Math.random() * fruits.length)], active: true };
+        let questions = [
+            { q: "Ein Budget hilft, die Einnahmen und Ausgaben im Blick zu behalten.", a: true },
+            { q: "Fixe Kosten verändern sich jeden Monat stark.", a: false },
+            { q: "Variable Kosten sind immer gleich hoch.", a: false },
+            { q: "Ein Sparkonto eignet sich besser für langfristige Ersparnisse als ein Privatkonto.", a: true },
+            { q: "Mit einer Debitkarte kann man nur Geld ausgeben, das auf dem Konto ist.", a: true },
+            { q: "Eine Kreditkarte bucht den Betrag direkt vom Konto ab.", a: false },
+            { q: "Ein Dauerauftrag ist eine automatische, regelmäßig wiederkehrende Zahlung.", a: true },
+            { q: "Das Lastschriftverfahren ist besonders nützlich für unregelmäßige Zahlungen.", a: true },
+            { q: "TWINT ist eine Schweizer Bezahl-App.", a: true },
+            { q: "Ein Budget zu erstellen ist unnötig, solange man genug Geld auf dem Konto hat.", a: false }
+        ];
+        let availableQuestions = [...questions];
+        let currentQuestion = {};
+        let correctAnswers = 0;
+        let gamePaused = false;
 
-  <script>
-    const questions = [
-      {
-        question: "Was versteht man unter einem gefestigten Konkubinat?",
-        answers: [
-          "Eine Ehe ohne Trauung",
-          "Eine langfristige Wohngemeinschaft mit wirtschaftlicher und emotionaler Bindung",
-          "Ein Zusammenleben mit gemeinsamen Kindern",
-          "Ein Verhältnis ohne Verpflichtungen"
-        ],
-        correct: 1
-      },
-      {
-        question: "Welche Institution beeinflusste das Eherecht im Mittelalter stark?",
-        answers: [
-          "Der Staat",
-          "Die Kirche",
-          "Die Universität",
-          "Die Nachbarschaft"
-        ],
-        correct: 1
-      },
-      {
-        question: "Was gehört zur Errungenschaft in einer Ehe?",
-        answers: [
-          "Erbschaften",
-          "Geschenke",
-          "Löhne während der Ehe",
-          "Eigengut"
-        ],
-        correct: 2
-      },
-      {
-        question: "Was ist ein Vorteil des Konkubinats?",
-        answers: [
-          "Man bekommt automatisch Witwenrente",
-          "Es ist steuerlich immer besser",
-          "Es kann ohne Scheidungsverfahren aufgelöst werden",
-          "Es ist gesetzlich geschützt wie eine Ehe"
-        ],
-        correct: 2
-      },
-      {
-        question: "Welche Aussage über die Familie im alten Rom ist richtig?",
-        answers: [
-          "Die Mutter war das Familienoberhaupt",
-          "Kinder hatten viele Rechte",
-          "Der Vater hatte Gewalt über die Familie bis zu seinem Tod",
-          "Ehen konnten nicht geschieden werden"
-        ],
-        correct: 2
-      },
-      {
-        question: "Wahr oder falsch: Konkubinatspartner haben automatisch ein Erbrecht füreinander.",
-        answers: ["Wahr", "Falsch"],
-        correct: 1
-      },
-      {
-        question: "Welche Aussage über das Bürgerrecht bei der Heirat ist korrekt?",
-        answers: [
-          "Die Frau verliert ihr Bürgerrecht",
-          "Beide behalten ihr ursprüngliches Bürgerrecht",
-          "Der Mann übernimmt das Bürgerrecht der Frau",
-          "Das Bürgerrecht wird durch das Kind bestimmt"
-        ],
-        correct: 1
-      },
-      {
-        question: "Wahr oder falsch: Im Konkubinat besteht kein gegenseitiger Anspruch auf AHV-Hinterlassenenleistungen.",
-        answers: ["Wahr", "Falsch"],
-        correct: 0
-      },
-      {
-        question: "Was beschreibt die Gütergemeinschaft?",
-        answers: [
-          "Jeder verwaltet sein eigenes Vermögen",
-          "Nur das Eigengut gehört beiden",
-          "Beide Ehepartner besitzen gemeinsam ein Gesamtgut",
-          "Alles wird getrennt verwaltet"
-        ],
-        correct: 2
-      },
-      {
-        question: "Wahr oder falsch: In der Gütertrennung haften beide Ehepartner gemeinsam für Schulden.",
-        answers: ["Wahr", "Falsch"],
-        correct: 1
-      },
-      {
-        question: "Welche Aussage beschreibt eine Liebesheirat im 19. Jahrhundert?",
-        answers: [
-          "War gesetzlich verboten",
-          "War hauptsächlich in der Oberschicht üblich",
-          "Setzte sich zunehmend durch",
-          "Wurde nur von der Kirche erlaubt"
-        ],
-        correct: 2
-      },
-      {
-        question: "Wahr oder falsch: Die Ehe ist erst mit der kirchlichen Trauung gültig.",
-        answers: ["Wahr", "Falsch"],
-        correct: 1
-      },
-      {
-        question: "Welche Aussage zu Patchworkfamilien im Mittelalter ist korrekt?",
-        answers: [
-          "Gab es kaum",
-          "Waren typisch durch hohe Sterblichkeit",
-          "Wurden gesetzlich geregelt",
-          "Waren gesellschaftlich verboten"
-        ],
-        correct: 1
-      },
-      {
-        question: "Welche Pflicht haben Ehepartner laut ZGB bei Schulden für den Alltag?",
-        answers: [
-          "Keine",
-          "Nur der Mann haftet",
-          "Beide haften solidarisch",
-          "Nur mit Ehevertrag"
-        ],
-        correct: 2
-      },
-      {
-        question: "Wahr oder falsch: Bei der Errungenschaft erhält jeder Ehepartner automatisch die Hälfte des Vorschlags.",
-        answers: ["Wahr", "Falsch"],
-        correct: 0
-      },
-      {
-        question: "Was ist ein Nachteil des Konkubinats?",
-        answers: [
-          "Günstigere Steuern",
-          "Unkomplizierte Trennung",
-          "Kein gesetzlicher Anspruch auf Witwenrente",
-          "Gemeinsames Sorgerecht ist automatisch"
-        ],
-        correct: 2
-      },
-      {
-        question: "Wahr oder falsch: Ein Verlöbnis ist ein rechtsverbindlicher Ehevertrag.",
-        answers: ["Wahr", "Falsch"],
-        correct: 1
-      },
-      {
-        question: "Welche Aussage zum Unterhalt nach einer Trennung im Konkubinat ist richtig?",
-        answers: [
-          "Es besteht automatisch ein Anspruch",
-          "Nur mit schriftlichem Vertrag",
-          "Immer für 2 Jahre",
-          "Nur wenn Kinder im Spiel sind"
-        ],
-        correct: 1
-      },
-      {
-        question: "Wahr oder falsch: Im Konkubinat haftet man automatisch für die Schulden des Partners.",
-        answers: ["Wahr", "Falsch"],
-        correct: 1
-      },
-      {
-        question: "Was passiert mit gemeinsam erspartem Geld bei der Errungenschaftsbeteiligung?",
-        answers: [
-          "Es bleibt beim besser Verdienenden",
-          "Es wird je zur Hälfte geteilt",
-          "Es gehört der Person, die das Konto führt",
-          "Es wird versteuert"
-        ],
-        correct: 1
-      }
-    ];
+        function drawPacman() {
+            ctx.beginPath();
+            ctx.arc(pacman.x, pacman.y, pacman.size, 0.2 * Math.PI, 1.8 * Math.PI);
+            ctx.lineTo(pacman.x, pacman.y);
+            ctx.fillStyle = "yellow";
+            ctx.fill();
+            ctx.closePath();
+        }
 
-    const player = document.getElementById("player");
-    const obstacle = document.getElementById("obstacle");
-    const questionBox = document.getElementById("question-box");
-    const questionText = document.getElementById("question-text");
-    const answersDiv = document.getElementById("answers");
-    const scoreDisplay = document.getElementById("score");
+        function drawGhost() {
+            ctx.fillStyle = "red";
+            ctx.beginPath();
+            ctx.arc(ghost.x, ghost.y, ghost.size, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.closePath();
+        }
 
-    let playerPosition = 50;
-    let score = 0;
-    let currentQuestion = 0;
-
-    document.addEventListener("keydown", (e) => {
-      if (e.key === "ArrowRight") {
-        movePlayer();
-      }
-    }); else 
-      if (e.key === "ArrowRight") {
-        movePlayer();
-      }
-    });
-
-    function movePlayer() {
-      if (questionBox.classList.contains("hidden")) {
-        playerPosition += 10;
-        player.style.left = playerPosition + "px";
-        checkCollision();
-      }
-    }
-
-    function checkCollision() {
-      const playerRect = player.getBoundingClientRect();
-      const obstacleRect = obstacle.getBoundingClientRect();
-      if (
-        playerRect.right >= obstacleRect.left &&
-        playerRect.left <= obstacleRect.right
-      ) {
-        showQuestion();
-      }
-    }
-      if (questionBox.classList.contains("hidden")) {
-        playerPosition += 10;
-        player.style.left = playerPosition + "px";
-        checkCollision();
-      }
-    }
-
-     else {
-          clearInterval(upInterval);
-          let downInterval = setInterval(() => {
-            if (player.offsetTop < startPosition) {
-              player.style.bottom = parseInt(player.style.bottom) - 5 + "px";
-            } else {
-              clearInterval(downInterval);
+        function drawFruit() {
+            if (fruit.active) {
+                ctx.fillStyle = "white";
+                ctx.font = "20px Arial";
+                ctx.fillText(fruit.type, fruit.x, fruit.y);
             }
-          }, 20);
         }
-      }, 20);
-    }
-      if (questionBox.classList.contains("hidden")) {
-        playerPosition += 10;
-        player.style.left = playerPosition + "px";
 
-        const playerRect = player.getBoundingClientRect();
-        const obstacleRect = obstacle.getBoundingClientRect();
-        if (
-          playerRect.right >= obstacleRect.left &&
-          playerRect.left <= obstacleRect.right &&
-          playerRect.bottom >= obstacleRect.top &&
-          playerRect.top <= obstacleRect.bottom
-        ) {
-          showQuestion();
+        function moveGhost() {
+            if (!gamePaused) {
+                let dx = pacman.x - ghost.x;
+                let dy = pacman.y - ghost.y;
+                let distance = Math.sqrt(dx * dx + dy * dy);
+                
+                ghost.dx = (dx / distance) * 1.5;
+                ghost.dy = (dy / distance) * 1.5;
+                
+                ghost.x += ghost.dx;
+                ghost.y += ghost.dy;
+                
+                ghost.x = Math.max(ghost.size, Math.min(canvas.width - ghost.size, ghost.x));
+                ghost.y = Math.max(ghost.size, Math.min(canvas.height - ghost.size, ghost.y));
+            }
         }
-      }
-    }
 
-    function showQuestion() {
-      questionBox.classList.remove("hidden");
-      const q = questions[currentQuestion];
-      questionText.textContent = q.question;
-      answersDiv.innerHTML = "";
+        function checkCollisions() {
+            let distX = pacman.x - fruit.x;
+            let distY = pacman.y - fruit.y;
+            let distance = Math.sqrt(distX * distX + distY * distY);
+            if (fruit.active && distance < pacman.size + fruit.size) {
+                fruit.active = false;
+                askQuestion();
+            }
 
-      q.answers.forEach((ans, index) => {
-        const btn = document.createElement("button");
-        btn.textContent = ans;
-        btn.onclick = () => checkAnswer(index);
-        answersDiv.appendChild(btn);
-      });
-    }
+            let ghostDistX = pacman.x - ghost.x;
+            let ghostDistY = pacman.y - ghost.y;
+            let ghostDistance = Math.sqrt(ghostDistX * ghostDistX + ghostDistY * ghostDistY);
+            if (ghostDistance < pacman.size + ghost.size) {
+                alert("Game Over! Der Geist hat dich erwischt.");
+                document.location.reload();
+            }
+        }
 
-    function checkAnswer(selected) {
-      questionBox.classList.add("hidden");
-      const correct = questions[currentQuestion].correct;
-      if (selected === correct) {
-        score += 10;
-        scoreDisplay.textContent = "Punkte: " + score;
-        nextRound();
-      } else {
-        alert("Falsch! Versuch es nochmal.");
-      }
-    }
+        function askQuestion() {
+            gamePaused = true;
+            if (availableQuestions.length === 0) return;
+            let index = Math.floor(Math.random() * availableQuestions.length);
+            currentQuestion = availableQuestions.splice(index, 1)[0];
+            document.getElementById("question").innerText = currentQuestion.q;
+            document.getElementById("quiz-container").style.display = "block";
+        }
 
-    function nextRound() {
-      questionBox.classList.add("hidden");
-      currentQuestion++;
+        function answer(choice) {
+            gamePaused = false;
+            if (choice === currentQuestion.a) {
+                correctAnswers++;
+                alert("Richtig!");
+            } else {
+                alert("Falsch! Die richtige Antwort war: " + (currentQuestion.a ? "Richtig" : "Falsch"));
+            }
+            document.getElementById("quiz-container").style.display = "none";
+            fruit = { x: Math.random() * 380 + 10, y: Math.random() * 380 + 10, size: 10, type: fruits[Math.floor(Math.random() * fruits.length)], active: true };
 
-      if (currentQuestion >= questions.length) {
-        alert("Gratulation! Du hast alle Fragen beantwortet.\nEndpunktzahl: " + score);
-        location.reload();
-      } else {
-        playerPosition = 50;
-        player.style.left = playerPosition + "px";
-      }
-    }
-  </script>
+            if (correctAnswers >= 10) {
+                alert("Herzlichen Glückwunsch! Du hast alle Fragen richtig beantwortet und gewonnen!");
+                document.location.reload();
+            }
+        }
+
+        document.addEventListener("keydown", function(event) {
+            if (event.key === "ArrowUp") pacman.dy = -2;
+            if (event.key === "ArrowDown") pacman.dy = 2;
+            if (event.key === "ArrowLeft") pacman.dx = -2;
+            if (event.key === "ArrowRight") pacman.dx = 2;
+        });
+
+        function update() {
+            if (!gamePaused) {
+                pacman.x = Math.max(pacman.size, Math.min(canvas.width - pacman.size, pacman.x + pacman.dx));
+                pacman.y = Math.max(pacman.size, Math.min(canvas.height - pacman.size, pacman.y + pacman.dy));
+                checkCollisions();
+                moveGhost();
+            }
+        }
+
+        function gameLoop() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawPacman();
+            drawGhost();
+            drawFruit();
+            update();
+            requestAnimationFrame(gameLoop);
+        }
+
+        gameLoop();
+    </script>
 </body>
 </html>
