@@ -77,6 +77,9 @@
                 
                 ghost.x += ghost.dx;
                 ghost.y += ghost.dy;
+                
+                ghost.x = Math.max(ghost.size, Math.min(canvas.width - ghost.size, ghost.x));
+                ghost.y = Math.max(ghost.size, Math.min(canvas.height - ghost.size, ghost.y));
             }
         }
 
@@ -124,17 +127,10 @@
             }
         }
 
-        document.addEventListener("keydown", function(event) {
-            if (event.key === "ArrowRight") { pacman.dx = 2; pacman.dy = 0; }
-            if (event.key === "ArrowLeft") { pacman.dx = -2; pacman.dy = 0; }
-            if (event.key === "ArrowUp") { pacman.dy = -2; pacman.dx = 0; }
-            if (event.key === "ArrowDown") { pacman.dy = 2; pacman.dx = 0; }
-        });
-
         function update() {
             if (!gamePaused) {
-                pacman.x += pacman.dx;
-                pacman.y += pacman.dy;
+                pacman.x = Math.max(pacman.size, Math.min(canvas.width - pacman.size, pacman.x + pacman.dx));
+                pacman.y = Math.max(pacman.size, Math.min(canvas.height - pacman.size, pacman.y + pacman.dy));
                 checkCollisions();
                 moveGhost();
             }
