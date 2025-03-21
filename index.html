@@ -21,9 +21,9 @@
         let canvas = document.getElementById("gameCanvas");
         let ctx = canvas.getContext("2d");
         let pacman = { x: 50, y: 50, size: 20, dx: 0, dy: 0 };
-        let ghost = { x: 200, y: 200, size: 20, dx: 1, dy: 1 };
+        let ghost = { x: 200, y: 200, size: 20, dx: 1, dy: 1, changeDirectionTimer: 0 };
         let fruits = ["🍌", "🍐", "🍏", "🍓", "🍊"];
-        let fruit = { x: Math.random() * 380 + 10, y: Math.random() * 380 + 10, size: 10, type: fruits[Math.floor(Math.random() * fruits.length)] };
+        let fruit = { x: Math.random() * 380 + 10, y: Math.random() * 380 + 10, size: 10, type: fruits[Math.floor(Math.random() * fruits.length)], active: true };
         let questions = [
             { q: "Ein Budget hilft, die Einnahmen und Ausgaben im Blick zu behalten.", a: true },
             { q: "Fixe Kosten verändern sich jeden Monat stark.", a: false },
@@ -58,9 +58,11 @@
         }
 
         function drawFruit() {
-            ctx.fillStyle = "white";
-            ctx.font = "20px Arial";
-            ctx.fillText(fruit.type, fruit.x, fruit.y);
+            if (fruit.active) {
+                ctx.fillStyle = "white";
+                ctx.font = "20px Arial";
+                ctx.fillText(fruit.type, fruit.x, fruit.y);
+            }
         }
 
         function moveGhost() {
@@ -69,6 +71,13 @@
                 ghost.y += ghost.dy;
                 if (ghost.x > canvas.width || ghost.x < 0) ghost.dx *= -1;
                 if (ghost.y > canvas.height || ghost.y < 0) ghost.dy *= -1;
+                
+                ghost.changeDirectionTimer++;
+                if (ghost.changeDirectionTimer > 100) {
+                    ghost.dx = (Math.random() - 0.5) * 2;
+                    ghost.dy = (Math.random() - 0.5) * 2;
+                    ghost.changeDirectionTimer = 0;
+                }
             }
         }
 
@@ -76,7 +85,8 @@
             let distX = pacman.x - fruit.x;
             let distY = pacman.y - fruit.y;
             let distance = Math.sqrt(distX * distX + distY * distY);
-            if (distance < pacman.size + fruit.size) {
+            if (fruit.active && distance < pacman.size + fruit.size) {
+                fruit.active = false;
                 askQuestion();
             }
 
@@ -105,9 +115,7 @@
                 alert("Falsch! Die richtige Antwort war: " + (currentQuestion.a ? "Richtig" : "Falsch"));
             }
             document.getElementById("quiz-container").style.display = "none";
-            fruit.x = Math.random() * 380 + 10;
-            fruit.y = Math.random() * 380 + 10;
-            fruit.type = fruits[Math.floor(Math.random() * fruits.length)];
+            fruit = { x: Math.random() * 380 + 10, y: Math.random() * 380 + 10, size: 10, type: fruits[Math.floor(Math.random() * fruits.length)], active: true };
 
             if (correctAnswers >= 10) {
                 alert("Herzlichen Glückwunsch! Du hast alle Fragen richtig beantwortet und gewonnen!");
@@ -139,14 +147,6 @@
             update();
             requestAnimationFrame(gameLoop);
         }
-
-        setInterval(() => {
-            if (!gamePaused) {
-                fruit.x = Math.random() * 380 + 10;
-                fruit.y = Math.random() * 380 + 10;
-                fruit.type = fruits[Math.floor(Math.random() * fruits.length)];
-            }
-        }, 5000);
 
         gameLoop();
     </script>
