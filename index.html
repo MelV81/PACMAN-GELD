@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Pac-Man Quiz</title>
+    <style>
+        body { text-align: center; font-family: Arial, sans-serif; }
+        canvas { background: #333; display: block; margin: auto; }
+        .quiz-container { margin-top: 20px; display: none; }
+    </style>
+</head>
+<body>
+    <h1>Pac-Man Quiz</h1>
+    <p>Steuere Pac-Man mit den Pfeiltasten, fange Früchte und beantworte Fragen!</p>
+    <canvas id="gameCanvas" width="400" height="400"></canvas>
+    <div class="quiz-container" id="quiz-container">
+        <p id="question"></p>
+        <button onclick="answer(true)">Richtig</button>
+        <button onclick="answer(false)">Falsch</button>
+    </div>
+    <script>
+        let canvas = document.getElementById("gameCanvas");
+        let ctx = canvas.getContext("2d");
+        let pacman = { x: 50, y: 50, size: 20, dx: 2, dy: 0 };
+        let ghost = { x: 200, y: 200, size: 20, dx: 1, dy: 1 };
+        let fruits = ["🍌", "🍐", "🍏", "🍓", "🍊"];
+        let fruit = { x: Math.random() * 380 + 10, y: Math.random() * 380 + 10, size: 10, type: fruits[Math.floor(Math.random() * fruits.length)] };
+        let questions = [
+            { q: "Ein Budget hilft, die Einnahmen und Ausgaben im Blick zu behalten.", a: true },
+            { q: "Fixe Kosten verändern sich jeden Monat stark.", a: false }
+        ];
+        let currentQuestion = {};
+        let correctAnswers = 0;
+        let gamePaused = false;
+
+        function drawPacman() {
+            ctx.beginPath();
+            ctx.arc(pacman.x, pacman.y, pacman.size, 0.2 * Math.PI, 1.8 * Math.PI);
+            ctx.lineTo(pacman.x, pacman.y);
+            ctx.fillStyle = "yellow";
+            ctx.fill();
+            ctx.closePath();
+        }
+
+        function drawFruit() {
+            ctx.fillStyle = "white";
+            ctx.font = "20px Arial";
+            ctx.fillText(fruit.type, fruit.x, fruit.y);
+        }
+
+        function checkFruitCollision() {
+            let distX = pacman.x - fruit.x;
+            let distY = pacman.y - fruit.y;
+            let distance = Math.sqrt(distX * distX + distY * distY);
+            if (distance < pacman.size + fruit.size) {
+                askQuestion();
+            }
+        }
+
+        function askQuestion() {
+            gamePaused = true;
+            currentQuestion = questions[Math.floor(Math.random() * questions.length)];
+            document.getElementById("question").innerText = currentQuestion.q;
+            document.getElementById("quiz-container").style.display = "block";
+        }
+
+        function answer(choice) {
+            gamePaused = false;
+            if (choice === currentQuestion.a) {
+                correctAnswers++;
+                alert("Richtig!");
+            } else {
+                alert("Falsch! Die richtige Antwort war: " + (currentQuestion.a ? "Richtig" : "Falsch"));
+            }
+            document.getElementById("quiz-container").style.display = "none";
+            fruit.x = Math.random() * 380 + 10;
+            fruit.y = Math.random() * 380 + 10;
+            fruit.type = fruits[Math.floor(Math.random() * fruits.length)];
+        }
+
+        function update() {
+            if (!gamePaused) {
+                pacman.x += pacman.dx;
+                pacman.y += pacman.dy;
+                checkFruitCollision();
+            }
+        }
+
+        function gameLoop() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawPacman();
+            drawFruit();
+            update();
+            requestAnimationFrame(gameLoop);
+        }
+
+        gameLoop();
+    </script>
+</body>
+</html>
