@@ -20,13 +20,21 @@
     <script>
         let canvas = document.getElementById("gameCanvas");
         let ctx = canvas.getContext("2d");
-        let pacman = { x: 50, y: 50, size: 20, dx: 2, dy: 0 };
+        let pacman = { x: 50, y: 50, size: 20, dx: 0, dy: 0 };
         let ghost = { x: 200, y: 200, size: 20, dx: 1, dy: 1 };
         let fruits = ["🍌", "🍐", "🍏", "🍓", "🍊"];
         let fruit = { x: Math.random() * 380 + 10, y: Math.random() * 380 + 10, size: 10, type: fruits[Math.floor(Math.random() * fruits.length)] };
         let questions = [
             { q: "Ein Budget hilft, die Einnahmen und Ausgaben im Blick zu behalten.", a: true },
-            { q: "Fixe Kosten verändern sich jeden Monat stark.", a: false }
+            { q: "Fixe Kosten verändern sich jeden Monat stark.", a: false },
+            { q: "Variable Kosten sind immer gleich hoch.", a: false },
+            { q: "Ein Sparkonto eignet sich besser für langfristige Ersparnisse als ein Privatkonto.", a: true },
+            { q: "Mit einer Debitkarte kann man nur Geld ausgeben, das auf dem Konto ist.", a: true },
+            { q: "Eine Kreditkarte bucht den Betrag direkt vom Konto ab.", a: false },
+            { q: "Ein Dauerauftrag ist eine automatische, regelmäßig wiederkehrende Zahlung.", a: true },
+            { q: "Das Lastschriftverfahren ist besonders nützlich für unregelmäßige Zahlungen.", a: true },
+            { q: "TWINT ist eine Schweizer Bezahl-App.", a: true },
+            { q: "Ein Budget zu erstellen ist unnötig, solange man genug Geld auf dem Konto hat.", a: false }
         ];
         let currentQuestion = {};
         let correctAnswers = 0;
@@ -41,18 +49,43 @@
             ctx.closePath();
         }
 
+        function drawGhost() {
+            ctx.fillStyle = "red";
+            ctx.beginPath();
+            ctx.arc(ghost.x, ghost.y, ghost.size, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.closePath();
+        }
+
         function drawFruit() {
             ctx.fillStyle = "white";
             ctx.font = "20px Arial";
             ctx.fillText(fruit.type, fruit.x, fruit.y);
         }
 
-        function checkFruitCollision() {
+        function moveGhost() {
+            if (!gamePaused) {
+                ghost.x += ghost.dx;
+                ghost.y += ghost.dy;
+                if (ghost.x > canvas.width || ghost.x < 0) ghost.dx *= -1;
+                if (ghost.y > canvas.height || ghost.y < 0) ghost.dy *= -1;
+            }
+        }
+
+        function checkCollisions() {
             let distX = pacman.x - fruit.x;
             let distY = pacman.y - fruit.y;
             let distance = Math.sqrt(distX * distX + distY * distY);
             if (distance < pacman.size + fruit.size) {
                 askQuestion();
+            }
+
+            let ghostDistX = pacman.x - ghost.x;
+            let ghostDistY = pacman.y - ghost.y;
+            let ghostDistance = Math.sqrt(ghostDistX * ghostDistX + ghostDistY * ghostDistY);
+            if (ghostDistance < pacman.size + ghost.size) {
+                alert("Game Over! Der Geist hat dich erwischt.");
+                document.location.reload();
             }
         }
 
@@ -75,23 +108,45 @@
             fruit.x = Math.random() * 380 + 10;
             fruit.y = Math.random() * 380 + 10;
             fruit.type = fruits[Math.floor(Math.random() * fruits.length)];
+
+            if (correctAnswers >= 10) {
+                alert("Herzlichen Glückwunsch! Du hast alle Fragen richtig beantwortet und gewonnen!");
+                document.location.reload();
+            }
         }
+
+        document.addEventListener("keydown", function(event) {
+            if (event.key === "ArrowRight") { pacman.dx = 2; pacman.dy = 0; }
+            if (event.key === "ArrowLeft") { pacman.dx = -2; pacman.dy = 0; }
+            if (event.key === "ArrowUp") { pacman.dy = -2; pacman.dx = 0; }
+            if (event.key === "ArrowDown") { pacman.dy = 2; pacman.dx = 0; }
+        });
 
         function update() {
             if (!gamePaused) {
                 pacman.x += pacman.dx;
                 pacman.y += pacman.dy;
-                checkFruitCollision();
+                checkCollisions();
+                moveGhost();
             }
         }
 
         function gameLoop() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             drawPacman();
+            drawGhost();
             drawFruit();
             update();
             requestAnimationFrame(gameLoop);
         }
+
+        setInterval(() => {
+            if (!gamePaused) {
+                fruit.x = Math.random() * 380 + 10;
+                fruit.y = Math.random() * 380 + 10;
+                fruit.type = fruits[Math.floor(Math.random() * fruits.length)];
+            }
+        }, 5000);
 
         gameLoop();
     </script>
